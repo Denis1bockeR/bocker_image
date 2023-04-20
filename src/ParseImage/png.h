@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <fstream>
 
 struct Chunk
 {
@@ -12,14 +13,22 @@ struct Chunk
 	uint32_t crc = 0;
 };
 
+enum PngError
+{
+	MissingChunk = -1,
+	WrongChunkType = -2,
+	InvalidChunkDataValue = -3
+};
+
 class Png
 {
 public:
 	Png(std::string puth);
 	~Png() = default;
 
-	constexpr uint32_t getWidth() noexcept;
-	constexpr uint32_t Height() noexcept;
+	uint32_t getWidth() noexcept;
+	uint32_t getHeight() noexcept;
+	uint8_t getBitDepth() noexcept;
 private:
 	std::vector<Chunk> chunks;
 
