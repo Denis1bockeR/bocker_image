@@ -1,15 +1,15 @@
-#ifndef _IMAGEPARSER_H_
-#define _IMAGEPARSER_H_
+#ifndef _IMAGEDECODER_H_
+#define _IMAGEDECODER_H_
 
 #include <string>
 #include <fstream>
 
-class ImageParser
+class ImageDecoder
 {
 public:
-	ImageParser() = delete;
-	ImageParser(const std::string& puth);
-	~ImageParser() = default;
+	ImageDecoder() = delete;
+	ImageDecoder(const std::string& puth);
+	~ImageDecoder() = default;
 private:
 	void bmpParser(const std::string& puth) noexcept;
 	void pngParser() noexcept;
