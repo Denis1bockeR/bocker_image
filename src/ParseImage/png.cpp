@@ -1,19 +1,32 @@
 #include <iostream>
+#include <bitset>
+#include <cstring>
 
 #include <intrin.h>
 
 #include "png.h"
-#include <bitset>
 
 Png::Png(std::string puth)
 {
 	std::ifstream image;
 	image.open(puth, std::ios::in | std::ios::binary | std::ios::ate);
 	int length = image.tellg();
-	int i = 8;
-	while (i < length)
+	image.seekg(0);
+
+	char header[8];
+	image.read(header, 8);
+	if (header[0] == '\x89' && header[1] == 'P' && header[2] == 'N' && header[3] == 'G'
+		&& header[4] == '\r' && header[5] == '\n' && header[6] == '\x1a' && header[7] == '\n')
 	{
-		chunks.emplace_back(readChunk(&image, i));
+		int i = 8;
+		while (i < length)
+		{
+			chunks.emplace_back(readChunk(&image, i));
+		}
+	}
+	else
+	{
+		throw(WrongFileFormaat);
 	}
 }
 
@@ -78,5 +91,82 @@ uint8_t Png::getBitDepth() noexcept
 	else
 	{
 		return PngError::MissingChunk;
+	}
+}
+
+void Png::changeImageColor(void (*pntFunc)(char))
+{
+	try
+	{
+		switch (static_cast<uint8_t>(chunks[0].chunkData[9]))
+		{
+		case 0:
+			break;
+		case 2:
+			break;
+		case 3:
+			for (auto& i : chunks)
+			{
+				if (i.chunkName == chunkName::PLTE)
+				{
+					for (size_t j = 0; j < i.length; j++)
+					{
+						pntFunc(static_cast<char>(i.chunkData[j]));
+					}
+					break;
+				}
+			}
+			break;
+		case 4:
+			break;
+		case 6:
+			break;
+		default:
+			throw(InvalidChunkDataValue);
+			break;
+		}
+	}
+	catch (...)
+	{
+		std::cout << "Invalid color type" << std::endl;
+	}
+}
+void Png::changeImageColor(uint8_t RDiv, uint8_t GDiv, uint8_t BDiv)
+{
+	try
+	{
+		switch (static_cast<uint8_t>(chunks[0].chunkData[9]))
+		{
+		case 0:
+			break;
+		case 2:
+			break;
+		case 3:
+			for (auto& i : chunks)
+			{
+				if (i.chunkName == chunkName::PLTE)
+				{
+					for (size_t j = 0; j < i.length; j+=3)
+					{
+						i.chunkData[j] = static_cast<std::byte>(static_cast<uint8_t>(i.chunkData[j])/RDiv);
+						i.chunkData[j+1] = static_cast<std::byte>(static_cast<uint8_t>(i.chunkData[j+1]) / GDiv);
+						i.chunkData[j+2] = static_cast<std::byte>(static_cast<uint8_t>(i.chunkData[j+2]) / BDiv);
+					}
+					break;
+				}
+			}
+			break;
+		case 4:
+			break;
+		case 6:
+			break;
+		default:
+			throw(InvalidChunkDataValue);
+			break;
+		}
+	}
+	catch (...)
+	{
+		std::cout << "Invalid color type" << std::endl;
 	}
 }
