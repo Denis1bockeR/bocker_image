@@ -1,0 +1,22 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzclose.c
+  gzlib.c
+  gzread.c
+  gzwrite.c
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  ioapi.c
+  iowin32.c
+  trees.c
+  uncompr.c
+  unzip.c
+  zip.c
+  zutil.c
+  Создание кода...
+     Создается библиотека x64\ZlibDllDebug\zlibwapi.lib и объект x64\ZlibDllDebug\zlibwapi.exp
+  zlibvc.vcxproj -> D:\zlib-1.2.13\contrib\vstudio\vc14\x64\ZlibDllDebug\zlibwapi.dll
