@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <functional>
 
 #include "image.h"
 
@@ -44,7 +45,8 @@ private:
 		i = newI;
 		image->seekg(i);
 	};
-	void decomprasseDefault(Chunk chunk);
+	std::vector<uint8_t> decomprasseDefault(Chunk chunk);
+	void filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
 
 	enum ColorType
 	{

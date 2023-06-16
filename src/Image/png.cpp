@@ -35,71 +35,88 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 {
 	image->seekg(i);
 
-	Chunk tempChunk;
-	image->read(reinterpret_cast<char*>(&tempChunk.length), 4);
-	tempChunk.length = _byteswap_ulong(tempChunk.length);
+	Chunk temp_chunk;
+	image->read(reinterpret_cast<char*>(&temp_chunk.length), 4);
+	temp_chunk.length = _byteswap_ulong(temp_chunk.length);
 
 	updatePosRead(image, i, i + 4);
-	image->read(reinterpret_cast<char*>(&tempChunk.chunk_name), 4);
+	image->read(reinterpret_cast<char*>(&temp_chunk.chunk_name), 4);
 
 
 	updatePosRead(image, i, i + 4);
-	for (int j = 0; j < tempChunk.length; j++)
+	for (int j = 0; j < temp_chunk.length; j++)
 	{
-		tempChunk.chunk_data.emplace_back();
+		temp_chunk.chunk_data.emplace_back();
 	}
 
-	image->read(reinterpret_cast<char*>(tempChunk.chunk_data.data()), tempChunk.length);
-	updatePosRead(image, i, i+tempChunk.length);
+	image->read(reinterpret_cast<char*>(temp_chunk.chunk_data.data()), temp_chunk.length);
+	updatePosRead(image, i, i+temp_chunk.length);
 
-	image->read(reinterpret_cast<char*>(&tempChunk.crc), 4);
+	image->read(reinterpret_cast<char*>(&temp_chunk.crc), 4);
 	i += 4;
 
-	switch (tempChunk.chunk_name)
+	switch (temp_chunk.chunk_name)
 	{
 	case 1380206665:
-		width = static_cast<uint32_t>(tempChunk.chunk_data[0]) << 24 | static_cast<uint32_t>(tempChunk.chunk_data[1]) << 16 | static_cast<uint32_t>(tempChunk.chunk_data[2]) << 8 | static_cast<uint32_t>(tempChunk.chunk_data[3]);
-		height = static_cast<uint32_t>(tempChunk.chunk_data[4]) << 24 | static_cast<uint32_t>(tempChunk.chunk_data[5]) << 16 | static_cast<uint32_t>(tempChunk.chunk_data[6]) << 8 | static_cast<uint32_t>(tempChunk.chunk_data[7]);
-		bit_depth = static_cast<uint8_t>(tempChunk.chunk_data[8]);
-		color_type = static_cast<Png::ColorType>(tempChunk.chunk_data[9]);
+		width = static_cast<uint32_t>(temp_chunk.chunk_data[0]) << 24 | static_cast<uint32_t>(temp_chunk.chunk_data[1]) << 16 | static_cast<uint32_t>(temp_chunk.chunk_data[2]) << 8 | static_cast<uint32_t>(temp_chunk.chunk_data[3]);
+		height = static_cast<uint32_t>(temp_chunk.chunk_data[4]) << 24 | static_cast<uint32_t>(temp_chunk.chunk_data[5]) << 16 | static_cast<uint32_t>(temp_chunk.chunk_data[6]) << 8 | static_cast<uint32_t>(temp_chunk.chunk_data[7]);
+		bit_depth = static_cast<uint8_t>(temp_chunk.chunk_data[8]);
+		color_type = static_cast<Png::ColorType>(temp_chunk.chunk_data[9]);
 
-		if (bit_depth != 1 or bit_depth != 2 or bit_depth != 4 or bit_depth != 8 or bit_depth != 16)
+		if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8 && bit_depth != 16)
 		{
 			throw InvalidChunkDataValue;
 		}
 		break;
 	case 1163152464:
+	{
 		int k = 0;
-		for (int j = 0; j < tempChunk.chunk_data.size(); j += 3)
+		for (int j = 0; j < temp_chunk.chunk_data.size(); j += 3)
 		{
 			data.emplace_back();
-			data[k].red = static_cast<uint8_t>(tempChunk.chunk_data[j]);
-			data[k].green = static_cast<uint8_t>(tempChunk.chunk_data[j+1]);
-			data[k].blue = static_cast<uint8_t>(tempChunk.chunk_data[j+2]);
+			data[k].red = static_cast<uint8_t>(temp_chunk.chunk_data[j]);
+			data[k].green = static_cast<uint8_t>(temp_chunk.chunk_data[j + 1]);
+			data[k].blue = static_cast<uint8_t>(temp_chunk.chunk_data[j + 2]);
 			k++;
 		}
 		break;
+	}
 	case 1413563465:
 		switch (color_type)
 		{
 		case Png::greyscale:
-			char buffer[1024];
+			return;
 			break;
 		case Png::truecolor:
+		{
+			auto decompress_data = decomprasseDefault(temp_chunk);
+			filterImageData(decompress_data, 3);
 			break;
+		}
 		case Png::greyscalWithAlfa:
 			break;
 		case Png::truecolorWithAlfe:
+		{
+			auto decompress_data = decomprasseDefault(temp_chunk);
+			for (const auto& i : decompress_data)
+			{
+				if (i == 1)
+				{
+					std::cout << std::bitset<8>(i) << std::endl;
+				}
+			}
+			filterImageData(decompress_data, 4);
 			break;
+		}
 		default:
 			throw InvalidChunkDataValue;
 			break;
 		}
 	}
 }
-void Png::decomprasseDefault(Chunk chunk)
+std::vector<uint8_t> Png::decomprasseDefault(Chunk chunk)
 {
-	if (static_cast<uint8_t>(chunk.chunk_data[0]) != 78)
+	if (static_cast<uint8_t>(chunk.chunk_data[0]) < '\x18')
 		throw InvalidChunkDataValue;
 
 	std::vector<uint8_t> decompress_data;
@@ -116,25 +133,55 @@ void Png::decomprasseDefault(Chunk chunk)
 		throw "ERROR INITIALIZATION ZLIB";
 	}
 
-	uint32_t chunk_size = chunk.length;
-	unsigned char* buffer = new unsigned char[chunk_size];
+	unsigned char* buffer = new unsigned char[chunk.length - 1];
 
 	do {
-		stream.avail_out = chunk_size;
+		stream.avail_out = chunk.length;
 		stream.next_out = buffer;
 
-		int result = inflate(&stream, Z_NO_FLUSH);
+		int result = inflate(&stream, Z_SYNC_FLUSH);
 
-		if (result == Z_NEED_DICT || result == Z_DATA_ERROR || result == Z_MEM_ERROR)
+		if (result != Z_OK && result != Z_STREAM_END)
 		{
 			inflateEnd(&stream);
 			throw "ERROR DECOMPRESSED ZLIB";
 		}
 
-		int decompressedBytes = chunk_size - stream.avail_out;
-		decompress_data.insert(decompress_data.end(), buffer, buffer + decompressedBytes);
+		int decompressed_bytes = chunk.length - stream.avail_out;
+		decompress_data.insert(decompress_data.end(), buffer, buffer + decompressed_bytes);
 
 	} while (stream.avail_out == 0);
 
 	inflateEnd(&stream);
+
+	delete[] buffer;
+
+	return decompress_data;
 }
+void Png::filterImageData(std::vector<uint8_t>& image_data, uint8_t steps)
+{
+	switch (image_data[0])
+	{
+	case 0:
+		for (size_t i = 1; i < image_data.size() - 1; i++)
+		{
+			image_data[i - 1] = image_data[i];
+		}
+		break;
+	case 1:
+		for (size_t i = steps + 1; i < image_data.size() - 1; i++)
+		{
+			image_data[i] = abs(image_data[i] - image_data[i - steps]);
+		}
+		break;
+	case 2:
+		break;
+	case 3:
+		break;
+	case 4:
+		break;
+	default:
+		throw InvalidChunkDataValue;
+		break;
+	}
+};
