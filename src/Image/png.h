@@ -46,7 +46,7 @@ private:
 		image->seekg(i);
 	};
 	std::vector<uint8_t> decomprasseDefault(Chunk chunk);
-	void filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
+	std::vector<uint8_t> filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
 
 	enum ColorType
 	{

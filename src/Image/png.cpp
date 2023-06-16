@@ -82,6 +82,8 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		break;
 	}
 	case 1413563465:
+		auto data = decomprasseDefault(temp_chunk);
+
 		switch (color_type)
 		{
 		case Png::greyscale:
@@ -89,23 +91,14 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			break;
 		case Png::truecolor:
 		{
-			auto decompress_data = decomprasseDefault(temp_chunk);
-			filterImageData(decompress_data, 3);
+			data = filterImageData(data, 3);
 			break;
 		}
 		case Png::greyscalWithAlfa:
 			break;
 		case Png::truecolorWithAlfe:
 		{
-			auto decompress_data = decomprasseDefault(temp_chunk);
-			for (const auto& i : decompress_data)
-			{
-				if (i == 1)
-				{
-					std::cout << std::bitset<8>(i) << std::endl;
-				}
-			}
-			filterImageData(decompress_data, 4);
+			data = filterImageData(data, 4);
 			break;
 		}
 		default:
@@ -133,7 +126,7 @@ std::vector<uint8_t> Png::decomprasseDefault(Chunk chunk)
 		throw "ERROR INITIALIZATION ZLIB";
 	}
 
-	unsigned char* buffer = new unsigned char[chunk.length - 1];
+	unsigned char* buffer = new unsigned char[chunk.length];
 
 	do {
 		stream.avail_out = chunk.length;
@@ -158,30 +151,60 @@ std::vector<uint8_t> Png::decomprasseDefault(Chunk chunk)
 
 	return decompress_data;
 }
-void Png::filterImageData(std::vector<uint8_t>& image_data, uint8_t steps)
+std::vector<uint8_t> Png::filterImageData(std::vector<uint8_t>& image_data, uint8_t steps)
 {
-	switch (image_data[0])
+	std::vector<uint8_t> filter_data(width * height * steps);
+
+	for (uint32_t i = 0; i < height + 1; i++)
 	{
-	case 0:
-		for (size_t i = 1; i < image_data.size() - 1; i++)
+		uint32_t filter_byte = (height * steps * i) + i;
+
+		switch (image_data[filter_byte])
 		{
-			image_data[i - 1] = image_data[i];
+		case 0:
+			for (size_t j = 0; j < width * steps; j++)
+			{
+				filter_data[filter_byte + j] = image_data[filter_byte + j + 1];
+			}
+			break;
+		case 1:
+			for (size_t j = 0; j < width * steps; j++)
+			{
+				if (filter_byte + j < 4)
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1];
+				}
+				else
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1] + filter_data[filter_byte + j - steps - i];
+				}
+			}
+			break;
+		case 2:
+			if (filter_byte == 0)
+			{
+				for (size_t j = 0; j < width * steps; j++)
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1];
+				}
+			}
+			else
+			{
+				for (size_t j = 0; j < width * steps; j++)
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1] + filter_data[(filter_byte + j - i) - (width * steps)];
+				}
+			}
+			break;
+		case 3:
+			break;
+		case 4:
+			break;
+		default:
+			throw InvalidChunkDataValue;
+			break;
 		}
-		break;
-	case 1:
-		for (size_t i = steps + 1; i < image_data.size() - 1; i++)
-		{
-			image_data[i] = abs(image_data[i] - image_data[i - steps]);
-		}
-		break;
-	case 2:
-		break;
-	case 3:
-		break;
-	case 4:
-		break;
-	default:
-		throw InvalidChunkDataValue;
-		break;
 	}
+
+	return filter_data;
 };
