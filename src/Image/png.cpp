@@ -95,6 +95,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			break;
 		}
 		case Png::greyscalWithAlfa:
+			return;
 			break;
 		case Png::truecolorWithAlfe:
 		{
@@ -107,6 +108,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		}
 	}
 }
+
 std::vector<uint8_t> Png::decomprasseDefault(Chunk chunk)
 {
 	if (static_cast<uint8_t>(chunk.chunk_data[0]) < '\x18')
@@ -155,7 +157,7 @@ std::vector<uint8_t> Png::filterImageData(std::vector<uint8_t>& image_data, uint
 {
 	std::vector<uint8_t> filter_data(width * height * steps);
 
-	for (uint32_t i = 0; i < height + 1; i++)
+	for (uint32_t i = 0; i < height; i++)
 	{
 		uint32_t filter_byte = (height * steps * i) + i;
 
@@ -170,7 +172,7 @@ std::vector<uint8_t> Png::filterImageData(std::vector<uint8_t>& image_data, uint
 		case 1:
 			for (size_t j = 0; j < width * steps; j++)
 			{
-				if (filter_byte + j < 4)
+				if (j < 4)
 				{
 					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1];
 				}
@@ -197,8 +199,30 @@ std::vector<uint8_t> Png::filterImageData(std::vector<uint8_t>& image_data, uint
 			}
 			break;
 		case 3:
+			for (size_t j = 0; j < width * steps; j++)
+			{
+				if (j < 4)
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1];
+				}
+				else
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1] + (filter_data[filter_byte + j - steps - i] + filter_data[(filter_byte + j - i) - (width * steps)]) / 2;
+				}
+			}
 			break;
 		case 4:
+			for (size_t j = 0; j < width * steps; j++)
+			{
+				if (j < 4)
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1];
+				}
+				else
+				{
+					filter_data[filter_byte + j - i] = image_data[filter_byte + j + 1] + paethPredictor(filter_data[filter_byte + j - steps - i], filter_data[(filter_byte + j - i) - (width * steps)], filter_data[(filter_byte + j - i) - (width * steps)] - 1);
+				}
+			}
 			break;
 		default:
 			throw InvalidChunkDataValue;
@@ -208,3 +232,23 @@ std::vector<uint8_t> Png::filterImageData(std::vector<uint8_t>& image_data, uint
 
 	return filter_data;
 };
+uint8_t Png::paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept
+{
+	int p = a + b - c;
+	int pa = std::abs(p - a);
+	int pb = std::abs(p - b);
+	int pc = std::abs(p - c);
+
+	if (pa <= pb && pa <= pc) 
+	{
+		return a;
+	}
+	else if (pb <= pc)
+	{
+		return b;
+	}
+	else 
+	{
+		return c;
+	}
+}

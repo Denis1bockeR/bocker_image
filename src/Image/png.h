@@ -47,6 +47,7 @@ private:
 	};
 	std::vector<uint8_t> decomprasseDefault(Chunk chunk);
 	std::vector<uint8_t> filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
+	uint8_t paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept;
 
 	enum ColorType
 	{
