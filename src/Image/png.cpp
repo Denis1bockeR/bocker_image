@@ -87,16 +87,25 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		switch (color_type)
 		{
 		case Png::greyscale:
+		{
 			return;
 			break;
+		}
 		case Png::truecolor:
 		{
 			data = filterImageData(data, 3);
 			break;
 		}
 		case Png::greyscalWithAlfa:
+		{
 			return;
 			break;
+		}
+		case Png::indexedColor:
+		{
+			return;
+			break;
+		}
 		case Png::truecolorWithAlfe:
 		{
 			data = filterImageData(data, 4);
@@ -106,6 +115,8 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			throw InvalidChunkDataValue;
 			break;
 		}
+
+		readData(data, color_type);
 	}
 }
 
@@ -250,5 +261,20 @@ uint8_t Png::paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept
 	else 
 	{
 		return c;
+	}
+}
+
+void Png::readData(std::vector<uint8_t> data, uint8_t steps) noexcept
+{
+	for (size_t i = 0; i < data.size() / steps; i += steps)
+	{
+		this->data[i].red = data[i * steps];
+		this->data[i].green = data[i * steps + 1];
+		this->data[i].blue = data[i * steps + 2];
+
+		if (steps == 4)
+		{
+			this->data[i].alfa = data[i * steps + 3];
+		}
 	}
 }
