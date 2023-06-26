@@ -1,5 +1,5 @@
 # bocker_image
-Library for working with png images in the future and others. Reading Png truecolor and truecolorWithAlfa is currently supported.
+Library for working with png images in the future and others. Reading Png truecolor and truecolorWithAlfa is currently supported with bit depth 8.
 
 Reading png image:
 
