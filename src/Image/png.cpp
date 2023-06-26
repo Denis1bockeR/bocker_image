@@ -116,7 +116,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			break;
 		}
 
-		readData(data, color_type);
+		writeData(data, color_type);
 	}
 }
 
@@ -264,7 +264,7 @@ uint8_t Png::paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept
 	}
 }
 
-void Png::readData(std::vector<uint8_t> data, uint8_t steps) noexcept
+void Png::writeData(std::vector<uint8_t> data, uint8_t steps) noexcept
 {
 	for (size_t i = 0; i < data.size() / steps; i += steps)
 	{
@@ -275,6 +275,10 @@ void Png::readData(std::vector<uint8_t> data, uint8_t steps) noexcept
 		if (steps == 4)
 		{
 			this->data[i].alfa = data[i * steps + 3];
+		}
+		else
+		{
+			this->data[i].alfa = 255;
 		}
 	}
 }

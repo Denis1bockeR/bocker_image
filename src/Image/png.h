@@ -40,15 +40,10 @@ private:
 	};
 
 	void readChunk(std::ifstream* image, int& i) noexcept;
-	inline void updatePosRead(std::ifstream* image, int& i, int newI) noexcept
-	{
-		i = newI;
-		image->seekg(i);
-	};
 	std::vector<uint8_t> decomprasseDefault(Chunk chunk);
 	std::vector<uint8_t> filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
 	uint8_t paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept;
-	void readData(std::vector<uint8_t> data, uint8_t steps) noexcept;
+	void writeData(std::vector<uint8_t> data, uint8_t steps) noexcept;
 
 	enum ColorType
 	{
