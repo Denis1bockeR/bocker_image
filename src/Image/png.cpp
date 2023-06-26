@@ -83,6 +83,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 	}
 	case 1413563465:
 		auto data = decomprasseDefault(temp_chunk);
+		auto step = color_type / 8;
 
 		switch (color_type)
 		{
@@ -93,7 +94,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		}
 		case Png::truecolor:
 		{
-			data = filterImageData(data, 3);
+			data = filterImageData(data, step);
 			break;
 		}
 		case Png::greyscalWithAlfa:
@@ -108,7 +109,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		}
 		case Png::truecolorWithAlfe:
 		{
-			data = filterImageData(data, 4);
+			data = filterImageData(data, step);
 			break;
 		}
 		default:
@@ -116,7 +117,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			break;
 		}
 
-		writeData(data, color_type);
+		writeData(data, step);
 	}
 }
 
