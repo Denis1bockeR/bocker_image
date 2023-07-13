@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <functional>
 
 #include "image.h"
 
@@ -23,6 +22,14 @@ enum chunkName
 	PLTE = 1163152464,
 	IDAT = 1413563465
 };
+enum ColorType
+{
+	greyscale = 0,
+	truecolor = 2,
+	indexedColor = 3,
+	greyscalWithAlfa = 4,
+	truecolorWithAlfe = 6
+};
 
 class Png : Image
 {
@@ -30,6 +37,7 @@ public:
 	Png(std::string puth);
 	virtual ~Png() = default;
 
+	//void writePng(std::string puth, std::vector<uint8_t> data, uint32_t width, uint32_t height, uint8_t bit_depth) noexcept;
 private:
 	struct Chunk
 	{
@@ -43,16 +51,8 @@ private:
 	std::vector<uint8_t> decomprasseDefault(Chunk chunk);
 	std::vector<uint8_t> filterImageData(std::vector<uint8_t>& image_data, uint8_t steps);
 	uint8_t paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept;
-	void writeData(std::vector<uint8_t> data, uint8_t steps) noexcept;
+	void readData(std::vector<uint8_t> data, uint8_t steps) noexcept;
 
-	enum ColorType
-	{
-		greyscale = 0,
-		truecolor = 2,
-		indexedColor = 3,
-		greyscalWithAlfa = 4,
-		truecolorWithAlfe = 6
-	};
 	ColorType color_type;
 };
 

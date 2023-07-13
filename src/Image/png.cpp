@@ -61,7 +61,7 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 		width = static_cast<uint32_t>(temp_chunk.chunk_data[0]) << 24 | static_cast<uint32_t>(temp_chunk.chunk_data[1]) << 16 | static_cast<uint32_t>(temp_chunk.chunk_data[2]) << 8 | static_cast<uint32_t>(temp_chunk.chunk_data[3]);
 		height = static_cast<uint32_t>(temp_chunk.chunk_data[4]) << 24 | static_cast<uint32_t>(temp_chunk.chunk_data[5]) << 16 | static_cast<uint32_t>(temp_chunk.chunk_data[6]) << 8 | static_cast<uint32_t>(temp_chunk.chunk_data[7]);
 		bit_depth = static_cast<uint8_t>(temp_chunk.chunk_data[8]);
-		color_type = static_cast<Png::ColorType>(temp_chunk.chunk_data[9]);
+		color_type = static_cast<ColorType>(temp_chunk.chunk_data[9]);
 
 		if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8 && bit_depth != 16)
 		{
@@ -86,27 +86,27 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 
 		switch (color_type)
 		{
-		case Png::greyscale:
+		case greyscale:
 		{
 			return;
 			break;
 		}
-		case Png::truecolor:
+		case truecolor:
 		{
 			data = filterImageData(data, 3);
 			break;
 		}
-		case Png::greyscalWithAlfa:
+		case greyscalWithAlfa:
 		{
 			return;
 			break;
 		}
-		case Png::indexedColor:
+		case indexedColor:
 		{
 			return;
 			break;
 		}
-		case Png::truecolorWithAlfe:
+		case truecolorWithAlfe:
 		{
 			data = filterImageData(data, 4);
 			break;
@@ -116,9 +116,25 @@ void Png::readChunk(std::ifstream* image, int& i) noexcept
 			break;
 		}
 
-		writeData(data, color_type);
+		readData(data, color_type);
 	}
 }
+//void Png::writePng(std::string puth, std::vector<uint8_t> data, uint32_t width, uint32_t height, uint8_t bit_depth) noexcept
+//{
+//	std::ofstream image;
+//	image.open(puth, std::ios::out);
+//
+//	//write png header
+//	image << "\x89pNG\r\n\x1a\n";
+//
+//	//write IHDR chunk
+//	std::vector<std::byte> chunk_data{width << 32 << 24 << 16 << 8};
+//
+//	Chunk chunk;
+//	chunk.chunk_data = chunk_data;
+//	chunk.length = chunk.chunk_data.size();
+//	chunk.chunk_name = _byteswap_ulong(IHDR);
+//};
 
 std::vector<uint8_t> Png::decomprasseDefault(Chunk chunk)
 {
@@ -264,7 +280,7 @@ uint8_t Png::paethPredictor(uint8_t a, uint8_t b, uint8_t c) noexcept
 	}
 }
 
-void Png::writeData(std::vector<uint8_t> data, uint8_t steps) noexcept
+void Png::readData(std::vector<uint8_t> data, uint8_t steps) noexcept
 {
 	for (size_t i = 0; i < data.size() / steps; i += steps)
 	{
